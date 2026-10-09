@@ -1,0 +1,67 @@
+# XcodeGen project specification. Generate the Xcode project with:
+#   brew install xcodegen
+#   xcodegen generate
+name: FileIntelligence
+options:
+  bundleIdPrefix: com.fileintelligence
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+packages:
+  FileIntelligenceKit:
+    path: FileIntelligenceKit
+
+targets:
+  FileIntelligence:
+    type: application
+    platform: macOS
+    sources:
+      - path: App/FileIntelligence
+    dependencies:
+      - package: FileIntelligenceKit
+        product: FileIntelligenceKit
+    info:
+      path: App/FileIntelligence/Info.plist
+      properties:
+        CFBundleDisplayName: File Intelligence
+        CFBundleName: File Intelligence
+        LSApplicationCategoryType: public.app-category.productivity
+        NSHumanReadableCopyright: ""
+        NSPrincipalClass: NSApplication
+    entitlements:
+      path: App/FileIntelligence/FileIntelligence.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.files.user-selected.read-write: true
+        com.apple.security.files.bookmarks.app-scope: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.fileintelligence.app
+        PRODUCT_NAME: File Intelligence
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "-"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        COMBINE_HIDPI_IMAGES: YES
+        ENABLE_PREVIEWS: YES
+
+schemes:
+  FileIntelligence:
+    build:
+      targets:
+        FileIntelligence: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    archive:
+      config: Release
