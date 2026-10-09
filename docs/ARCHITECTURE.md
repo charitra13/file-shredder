@@ -81,4 +81,4 @@ Tables: `scan_roots`, `files`, `categories` (seeded, hierarchical), `file_tags`,
 - Inode-based move detection does not cross volumes, because a cross-volume move is a copy plus a delete. Such files appear as new items and the old record becomes missing.
 - `withTimeout` cancels cooperative work only. A media parser that blocks without checking cancellation still holds one of the four enrichment slots until it returns.
 - Packages and opaque folders above 25,000 entries report a capped (lower-bound) size.
-- Phases 4–7 (content extraction and FTS5 search, Trash and Archive workflows, notifications, optional local intelligence) are not implemented.
+- Content extraction and FTS5 search and optional local intelligence are not implemented. Trash and Archive (`FileOperationService`) move items and never delete them; the index follows through a shallow rescan of the affected folders.

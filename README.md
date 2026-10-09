@@ -1,6 +1,6 @@
 # File Intelligence
 
-A native macOS app (SwiftUI, macOS 14+) that builds a private, searchable index of the folders and drives you choose. It identifies what your files are, finds exact duplicates and large files, and explains which files may be worth reviewing. Everything runs locally. There is no account, no backend and no network access, and the app never deletes files.
+A native macOS app (SwiftUI, macOS 14+) that builds a private, searchable index of the folders and drives you choose. It identifies what your files are, finds exact duplicates and large files, and explains which files may be worth reviewing. Everything runs locally. There is no account, no backend and no network access, and the app never deletes files: it only moves them to the Trash or an archive folder when you ask.
 
 > **Status:** Phases 1–3 of the plan (foundation, index reliability, classification and storage intelligence) are implemented. The code was written in an environment without a Swift toolchain, so the first build and test run happen on a Mac or in CI. See [Build status](#build-status).
 
@@ -15,9 +15,11 @@ A native macOS app (SwiftUI, macOS 14+) that builds a private, searchable index 
 | Classification | Deterministic, offline, layered rules: your rules, then links, packages, temporary patterns, the extension table, system type conformance, well-known filenames and content signatures. Mismatched extensions are classified by content. Low-confidence results go to *Unknown*. Every result stores its category, source, confidence and rationale. Filename keywords add suggested tags but never assign a category on their own. Your corrections are never overwritten, and three consistent corrections for an extension become a transparent learned rule that you can reset. |
 | Duplicates | Exact duplicates only: candidates by size, then a quick hash of head and tail for large files, then a full SHA-256. Each file is re-checked on disk before and after hashing. Savings are computed without double-counting hard links. You choose the copy to keep, and *Verify Again* re-reads every copy. |
 | Review priority | An explainable 0–100 heuristic built from duplicates, temporary files, old installers, large files and archives, archives that look already extracted, unclassified items and staleness. It is lowered for files inside project folders and for code, configuration and databases. Keep and Ignore suppress suggestions. Weights and thresholds are configurable. |
+| File actions | *Archive…* moves selected items into a folder you choose (an item with the same name there is never replaced). *Move to Trash…* asks first, and Finder's Put Back restores the items. Every action is logged in Activity, and the index follows the moved files. |
+| Notifications | While the app is in the background: a full scan that found changes, a failed scan, a location that became unavailable, stopped processing, and finished file actions. Turn them off in System Settings › Notifications. |
 | UI | Overview, All Files (sortable, filterable, paginated table with an inspector), Categories, Duplicates, Large Files, Review Candidates, Indexed Locations, Activity (scans, problems, your decisions) and Settings (indexing, scoring, category rules, maintenance, privacy). Supports light and dark mode, keyboard shortcuts (⌘1–⌘9, ⇧⌘O, ⇧⌘R) and context menus. |
 
-Not in this version (planned for later phases): content extraction and full-text search (FTS5), the archive and Move to Trash workflows, notifications, and optional local semantic intelligence. The schema already has the `extracted_content` table and the `content_*` status columns.
+Not in this version (planned for later phases): content extraction and full-text search (FTS5) and optional local semantic intelligence. The schema already has the `extracted_content` table and the `content_*` status columns.
 
 ## Repository layout
 
