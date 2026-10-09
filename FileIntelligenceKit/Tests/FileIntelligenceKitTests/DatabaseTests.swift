@@ -25,7 +25,7 @@ final class DatabaseTests: XCTestCase {
 
         let url = URL(fileURLWithPath: sandbox.path("index.sqlite"))
         let reopened = try AppDatabase.open(at: url)
-        let count = try reopened.reader.read { db in
+        let count = try await reopened.reader.read { db in
             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM files WHERE filename = 'a.txt'") ?? 0
         }
         XCTAssertEqual(count, 1)
@@ -78,11 +78,11 @@ final class DatabaseTests: XCTestCase {
         let recovered = try sandbox.database.recoverInterruptedScans()
 
         XCTAssertEqual(recovered, 1)
-        let state = try sandbox.database.reader.read { db in
+        let state = try await sandbox.database.reader.read { db in
             try String.fetchOne(db, sql: "SELECT state FROM scan_runs WHERE id = ?", arguments: [runId])
         }
         XCTAssertEqual(state, ScanRunState.interrupted.rawValue)
-        let rootState = try sandbox.database.reader.read { db in
+        let rootState = try await sandbox.database.reader.read { db in
             try String.fetchOne(db, sql: "SELECT scan_state FROM scan_roots WHERE id = ?", arguments: [root.id])
         }
         XCTAssertEqual(rootState, RootScanState.interrupted.rawValue)
