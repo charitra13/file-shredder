@@ -359,6 +359,51 @@ final class AppModel {
         }
     }
 
+    // MARK: - File actions
+
+    func moveToTrash(_ ids: [Int64]) {
+        let confirm = NSAlert()
+        confirm.messageText = ids.count == 1 ? "Move this item to the Trash?" : "Move \(ids.count.formatted()) items to the Trash?"
+        confirm.informativeText = "You can restore them from the Trash with Put Back."
+        confirm.addButton(withTitle: "Move to Trash")
+        confirm.addButton(withTitle: "Cancel")
+        guard confirm.runModal() == .alertFirstButtonReturn else { return }
+        runFileOperation(title: "Moved to Trash") { try await $0.moveToTrash(fileIds: ids) }
+    }
+
+    func archive(_ ids: [Int64]) {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.prompt = "Archive Here"
+        panel.message = "Choose a folder to move the selected items into. Items with the same name there are never replaced."
+        guard panel.runModal() == .OK, let folder = panel.url else { return }
+        runFileOperation(title: "Archived") { try await $0.archive(fileIds: ids, to: folder) }
+    }
+
+    private func runFileOperation(
+        title: String,
+        _ operation: @escaping @Sendable (FileOperationService) async throws -> FileOperationService.Outcome
+    ) {
+        let service = environment.fileOperations
+        perform {
+            let outcome = try await operation(service)
+            if !outcome.failures.isEmpty {
+                self.alert = AppAlert(
+                    title: "Some Items Weren’t Moved",
+                    message: outcome.failures.prefix(10).joined(separator: "\n")
+                )
+            }
+            if outcome.succeeded > 0 {
+                self.notify(title, outcome.succeeded == 1 ? "1 item." : "\(outcome.succeeded.formatted()) items.")
+            }
+            // Rescan the affected folders so records follow the files (or become missing).
+            let changes = outcome.changedFolders.map { DirectoryChange(path: $0, recursive: false) }
+            await self.environment.indexing.applyChanges(changes)
+        }
+    }
+
     // MARK: - Finder
 
     func reveal(_ paths: [String]) {
