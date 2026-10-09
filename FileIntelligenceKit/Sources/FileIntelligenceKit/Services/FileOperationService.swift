@@ -1,7 +1,7 @@
 import Foundation
 import GRDB
 
-/// The only service that changes files on disk: it moves them to the Trash or into an archive folder.
+/// The only service that changes files on disk: it moves them to the Trash.
 ///
 /// Files are moved, never deleted, so every action can be undone in Finder. Each item is logged in
 /// `file_actions` with its destination. The index follows by rescanning `changedFolders`.
@@ -30,15 +30,6 @@ public struct FileOperationService: Sendable {
             var trashed: NSURL?
             try FileManager.default.trashItem(at: url, resultingItemURL: &trashed)
             return (trashed as URL?)?.path
-        }
-    }
-
-    /// Moves items into `folder`. An item with the same name already there is never replaced.
-    public func archive(fileIds: [Int64], to folder: URL, now: Date = Date()) async throws -> Outcome {
-        try await move(fileIds, action: .archive, status: .archived, now: now) { url in
-            let destination = folder.appendingPathComponent(url.lastPathComponent)
-            try FileManager.default.moveItem(at: url, to: destination)
-            return destination.path
         }
     }
 

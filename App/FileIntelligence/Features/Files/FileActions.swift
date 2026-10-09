@@ -2,7 +2,7 @@ import AppKit
 import FileIntelligenceKit
 import SwiftUI
 
-/// Context menu for one or more files. Only Move to Trash and Archive change files on disk.
+/// Context menu for one or more files. Only Move to Trash changes files on disk.
 struct FileContextMenu: View {
     let items: [FileListItem]
     let categories: [FileCategory]
@@ -33,7 +33,6 @@ struct FileContextMenu: View {
             }
             Button("Use Automatic Category") { model.resetClassification(ids) }
             Divider()
-            Button("Archive…") { model.archive(ids) }
             Button("Move to Trash…") { model.moveToTrash(ids) }
         }
     }
@@ -108,10 +107,9 @@ struct BulkSelectionView: View {
             }
             Section {
                 Button("Reveal All in Finder") { model.reveal(items.map(\.path)) }
-                Button("Archive All…") { model.archive(ids) }
                 Button("Move All to Trash…") { model.moveToTrash(ids) }
             } footer: {
-                Text("Decisions are saved in the index and survive rescans. Only Archive and Move to Trash change files on disk.")
+                Text("Decisions are saved in the index and survive rescans. Only Move to Trash changes files on disk.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

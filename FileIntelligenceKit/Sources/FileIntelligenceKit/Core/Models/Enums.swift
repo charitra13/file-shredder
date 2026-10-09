@@ -186,7 +186,6 @@ public enum FileActionType: String, Codable, Sendable, CaseIterable, DatabaseVal
     case addTag
     case removeTag
     case trash
-    case archive
 
     public var displayName: String {
         switch self {
@@ -200,7 +199,6 @@ public enum FileActionType: String, Codable, Sendable, CaseIterable, DatabaseVal
         case .addTag: return "Added Tag"
         case .removeTag: return "Removed Tag"
         case .trash: return "Moved to Trash"
-        case .archive: return "Archived"
         }
     }
 }

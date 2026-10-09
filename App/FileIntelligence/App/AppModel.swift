@@ -371,17 +371,6 @@ final class AppModel {
         runFileOperation(title: "Moved to Trash") { try await $0.moveToTrash(fileIds: ids) }
     }
 
-    func archive(_ ids: [Int64]) {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.canCreateDirectories = true
-        panel.prompt = "Archive Here"
-        panel.message = "Choose a folder to move the selected items into. Items with the same name there are never replaced."
-        guard panel.runModal() == .OK, let folder = panel.url else { return }
-        runFileOperation(title: "Archived") { try await $0.archive(fileIds: ids, to: folder) }
-    }
-
     private func runFileOperation(
         title: String,
         _ operation: @escaping @Sendable (FileOperationService) async throws -> FileOperationService.Outcome
