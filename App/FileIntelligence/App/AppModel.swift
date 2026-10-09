@@ -2,6 +2,7 @@ import AppKit
 import FileIntelligenceKit
 import Observation
 import SwiftUI
+import UserNotifications
 
 struct ScanActivity: Equatable {
     var itemsSeen: Int
@@ -48,6 +49,7 @@ final class AppModel {
     func start() async {
         guard !hasStarted else { return }
         hasStarted = true
+        Task { _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) }
         listenForEvents()
         await environment.registry.startAccessingEnabledRoots()
         await reloadRoots()
@@ -75,9 +77,26 @@ final class AppModel {
             activeScans[rootId]?.directoriesVisited = directoriesVisited
             refreshThrottled()
         case .scanFinished(let outcome):
+            // Only full scans that changed something; change-watching and quiet reconciliation stay silent.
+            if activeScans[outcome.rootId]?.kind == .full, outcome.added + outcome.moved + outcome.missing > 0 {
+                notify(
+                    "Scan of \(rootName(outcome.rootId)) Finished",
+                    "\(outcome.added.formatted()) new, \(outcome.moved.formatted()) moved, \(outcome.missing.formatted()) missing."
+                )
+            }
             activeScans[outcome.rootId] = nil
             refreshNow()
-        case .scanCancelled(let rootId), .scanFailed(let rootId, _), .rootUnavailable(let rootId):
+        case .scanFailed(let rootId, let message):
+            notify("Scan of \(rootName(rootId)) Failed", message)
+            activeScans[rootId] = nil
+            refreshNow()
+        case .rootUnavailable(let rootId):
+            if roots.first(where: { $0.id == rootId })?.root.scanState != .unavailable {
+                notify("\(rootName(rootId)) Is Unavailable", "Its files are kept in the index until it’s connected again.")
+            }
+            activeScans[rootId] = nil
+            refreshNow()
+        case .scanCancelled(let rootId):
             activeScans[rootId] = nil
             refreshNow()
         case .processingStarted:
@@ -91,7 +110,16 @@ final class AppModel {
             refreshNow()
         case .processingFailed(let message):
             alert = AppAlert(title: "Processing Stopped", message: message)
+            notify("Processing Stopped", message)
         }
+    }
+
+    /// macOS shows these only while the app is in the background; System Settings controls them.
+    private func notify(_ title: String, _ body: String) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
     }
 
     private func refreshNow() {
