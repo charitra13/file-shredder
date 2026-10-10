@@ -34,6 +34,7 @@ struct FileContextMenu: View {
             Button("Use Automatic Category") { model.resetClassification(ids) }
             Divider()
             Button("Move to Trash…") { model.moveToTrash(ids) }
+                .keyboardShortcut(.delete, modifiers: .command)
         }
     }
 }
