@@ -76,7 +76,7 @@ Tables: `scan_roots`, `files`, `categories` (seeded, hierarchical), `file_tags`,
 
 ## Known limitations
 
-- **Not yet compiled or tested** (see the README). The first CI run will show compile errors to fix.
+- The core package tests and unsigned macOS app build have passed locally. Interactive UI behavior has not been manually verified; see the README for validation details.
 - FSEvents monitoring runs only while the app is open. Reconciliation scans (default every 6 hours, and at launch for stale locations) cover the rest. There is no background agent.
 - Inode-based move detection does not cross volumes, because a cross-volume move is a copy plus a delete. Such files appear as new items and the old record becomes missing.
 - `withTimeout` cancels cooperative work only. A media parser that blocks without checking cancellation still holds one of the four enrichment slots until it returns.

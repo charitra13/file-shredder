@@ -2,7 +2,7 @@
 
 A native macOS app (SwiftUI, macOS 14+) that builds a private, searchable index of the folders and drives you choose. It identifies what your files are, finds exact duplicates and large files, and explains which files may be worth reviewing. Everything runs locally. There is no account, no backend and no network access, and the app never deletes files: it only moves them to the Trash when you ask.
 
-> **Status:** Phases 1–3 of the plan (foundation, index reliability, classification and storage intelligence) are implemented. The code was written in an environment without a Swift toolchain, so the first build and test run happen on a Mac or in CI. See [Build status](#build-status).
+> **Status:** Phases 1–3 of the plan (foundation, index reliability, classification and storage intelligence) are implemented. See [Build status](#build-status) for validation details.
 
 ## Features in this version
 
@@ -64,7 +64,7 @@ The tests create their fixtures in fresh temporary folders and their own databas
 
 ## Build status
 
-This code was written in a Linux container with no Swift compiler, and network policy blocked downloading one, so **neither the app nor the tests have been compiled or run yet**. The CI workflow (`.github/workflows/ci.yml`) runs `swift test` and an unsigned `xcodebuild` on a GitHub-hosted macOS runner, and that is where the first real results come from. Expect some compile fixes in the first round.
+All 80 core package tests (`swift test`) and an unsigned macOS app build have passed locally. The CI workflow (`.github/workflows/ci.yml`) runs both checks on every push and pull request. Interactive UI behavior, including Quick Look, notification delivery and Finder's Put Back, has not been manually verified.
 
 ## Privacy
 

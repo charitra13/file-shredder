@@ -18,6 +18,16 @@ public struct FileOperationService: Sendable {
         public var changedFolders: Set<String> = []
     }
 
+    /// A post-move failure that preserves completed moves so the caller can still reconcile them.
+    public struct CompletionError: Error, LocalizedError {
+        public let outcome: Outcome
+        public let underlyingError: any Error
+
+        public var errorDescription: String? {
+            "Items were moved to the Trash, but their activity or review information could not be updated. Rescan the location if its file list is out of date."
+        }
+    }
+
     public init(database: AppDatabase, scorer: CleanupScorer, preferences: PreferencesRepository) {
         self.database = database
         self.scorer = scorer
@@ -33,7 +43,7 @@ public struct FileOperationService: Sendable {
         }
     }
 
-    private func move(
+    func move(
         _ fileIds: [Int64],
         action: FileActionType,
         status: ReviewStatus,
@@ -46,7 +56,11 @@ public struct FileOperationService: Sendable {
             try SQL.forEachChunk(of: fileIds) { chunk, placeholders in
                 rows += try Row.fetchAll(
                     db,
-                    sql: "SELECT id, path, filename, availability FROM files WHERE id IN (\(placeholders))",
+                    sql: """
+                        SELECT id, path, filename, availability, item_kind, volume_uuid, inode,
+                               size_bytes, modified_at, created_at
+                        FROM files WHERE id IN (\(placeholders))
+                        """,
                     arguments: StatementArguments(chunk)
                 )
             }
@@ -57,6 +71,7 @@ public struct FileOperationService: Sendable {
         var outcome = Outcome()
         var records: [FileActionRecord] = []
         var movedIds: [Int64] = []
+        let volumes = VolumeIdentityResolver()
         for row in rows {
             let id: Int64 = row["id"]
             let path: String = row["path"]
@@ -69,13 +84,20 @@ public struct FileOperationService: Sendable {
                 guard (row["availability"] as String) == Availability.available.rawValue else {
                     throw FileIntelligenceError.invalidInput("The item is not available on disk.")
                 }
+                // Packages and opaque folders store content-size estimates rather than lstat sizes.
+                guard case .success(let info) = FileStat.read(path),
+                      info.storedInode == (row["inode"] as Int64?),
+                      volumes.identity(device: info.device, samplePath: PathUtilities.parent(of: path)) == (row["volume_uuid"] as String?),
+                      DateUtilities.approximatelyEqual(info.createdAt, row["created_at"]),
+                      DateUtilities.approximatelyEqual(info.modifiedAt, row["modified_at"]),
+                      (row["item_kind"] as String) != ItemKind.regular.rawValue || info.size == (row["size_bytes"] as Int64)
+                else {
+                    throw FileIntelligenceError.invalidInput("The item changed since it was indexed. Rescan the location and confirm the move again.")
+                }
                 record.destinationPath = try operation(URL(fileURLWithPath: path))
                 movedIds.append(id)
                 outcome.succeeded += 1
                 outcome.changedFolders.insert(PathUtilities.parent(of: path))
-                if let destination = record.destinationPath {
-                    outcome.changedFolders.insert(PathUtilities.parent(of: destination))
-                }
             } catch {
                 record.result = .failed
                 record.errorDetails = error.localizedDescription
@@ -84,20 +106,25 @@ public struct FileOperationService: Sendable {
             records.append(record)
         }
 
-        try await database.writer.write { [movedIds, records] db in
-            try SQL.forEachChunk(of: movedIds) { chunk, placeholders in
-                var values: [(any DatabaseValueConvertible)?] = [status, now]
-                values += chunk.map { $0 as (any DatabaseValueConvertible)? }
-                try db.execute(
-                    sql: "UPDATE files SET review_status = ?, reviewed_at = ? WHERE id IN (\(placeholders))",
-                    arguments: SQL.arguments(values)
-                )
+        do {
+            try await database.writer.write { [movedIds, records] db in
+                try SQL.forEachChunk(of: movedIds) { chunk, placeholders in
+                    var values: [(any DatabaseValueConvertible)?] = [status, now]
+                    values += chunk.map { $0 as (any DatabaseValueConvertible)? }
+                    try db.execute(
+                        sql: "UPDATE files SET review_status = ?, reviewed_at = ? WHERE id IN (\(placeholders))",
+                        arguments: SQL.arguments(values)
+                    )
+                }
+                for var record in records {
+                    try record.insert(db)
+                }
             }
-            for var record in records {
-                try record.insert(db)
-            }
+            try scorer.score(fileIds: movedIds, settings: preferences.loadSettings().scoring, now: now)
+        } catch {
+            guard outcome.succeeded > 0 else { throw error }
+            throw CompletionError(outcome: outcome, underlyingError: error)
         }
-        try scorer.score(fileIds: movedIds, settings: preferences.loadSettings().scoring, now: now)
         return outcome
     }
 }

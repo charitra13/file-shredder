@@ -377,11 +377,19 @@ final class AppModel {
     ) {
         let service = environment.fileOperations
         perform {
-            let outcome = try await operation(service)
-            if !outcome.failures.isEmpty {
+            let outcome: FileOperationService.Outcome
+            var messages: [String] = []
+            do {
+                outcome = try await operation(service)
+            } catch let error as FileOperationService.CompletionError {
+                outcome = error.outcome
+                messages.append(error.localizedDescription)
+            }
+            messages += outcome.failures.prefix(10)
+            if !messages.isEmpty {
                 self.alert = AppAlert(
-                    title: "Some Items Weren’t Moved",
-                    message: outcome.failures.prefix(10).joined(separator: "\n")
+                    title: "Move to Trash Needs Attention",
+                    message: messages.joined(separator: "\n")
                 )
             }
             if outcome.succeeded > 0 {

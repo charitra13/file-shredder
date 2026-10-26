@@ -1,5 +1,12 @@
 # Version History
 
+## 0.3.1
+
+- Refuse to move files to the Trash when their identity or metadata changed since indexing.
+- Reconcile only source folders after Trash actions so trashed items stay out of file lists.
+- Preserve completed moves and rescan affected folders when saving activity or scoring fails.
+- Add regression tests for Trash actions and correct the documented build status.
+
 ## 0.3.0
 
 - Add Quick Look: press Space in a file list to preview the selected files.
