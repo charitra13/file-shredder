@@ -13,6 +13,7 @@ public final class IndexEnvironment: Sendable {
     public let preferences: PreferencesRepository
     public let review: ReviewService
     public let maintenance: MaintenanceService
+    public let fileOperations: FileOperationService
     public let duplicateDetector: DuplicateDetector
     public let pipeline: ProcessingPipeline
 
@@ -56,6 +57,7 @@ public final class IndexEnvironment: Sendable {
         self.categories = CategoryRepository(database: database)
         self.review = ReviewService(database: database, scorer: scorer, preferences: preferences)
         self.maintenance = MaintenanceService(database: database, classifier: classifier)
+        self.fileOperations = FileOperationService(database: database, scorer: scorer, preferences: preferences)
     }
 
     /// The production configuration: on-disk index, security-scoped bookmarks, standard protections.

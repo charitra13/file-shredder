@@ -1,4 +1,5 @@
 import FileIntelligenceKit
+import QuickLook
 import SwiftUI
 
 enum SizeFilter: String, CaseIterable, Identifiable {
@@ -113,6 +114,7 @@ struct FileBrowserView: View {
     @State private var selection = Set<FileListItem.ID>()
     @State private var showInspector = true
     @State private var categories: [FileCategory] = []
+    @State private var previewURL: URL?
 
     private let pageSize = 200
 
@@ -294,6 +296,17 @@ struct FileBrowserView: View {
         } primaryAction: { ids in
             let paths = items.filter { ids.contains($0.id) }.map(\.path)
             model.reveal(paths)
+        }
+        .quickLookPreview($previewURL, in: selectedItems.map { URL(fileURLWithPath: $0.path) })
+        // Handled on the table, not as menu shortcuts, so typing in the search field is unaffected.
+        .onKeyPress(.space) {
+            previewURL = previewURL == nil ? selectedItems.first.map { URL(fileURLWithPath: $0.path) } : nil
+            return .handled
+        }
+        .onKeyPress(keys: [.delete]) { press in
+            guard press.modifiers.contains(.command), !selection.isEmpty else { return .ignored }
+            model.moveToTrash(Array(selection))
+            return .handled
         }
     }
 

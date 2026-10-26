@@ -185,6 +185,7 @@ public enum FileActionType: String, Codable, Sendable, CaseIterable, DatabaseVal
     case setPreferredCopy
     case addTag
     case removeTag
+    case trash
 
     public var displayName: String {
         switch self {
@@ -197,6 +198,7 @@ public enum FileActionType: String, Codable, Sendable, CaseIterable, DatabaseVal
         case .setPreferredCopy: return "Chose Preferred Copy"
         case .addTag: return "Added Tag"
         case .removeTag: return "Removed Tag"
+        case .trash: return "Moved to Trash"
         }
     }
 }

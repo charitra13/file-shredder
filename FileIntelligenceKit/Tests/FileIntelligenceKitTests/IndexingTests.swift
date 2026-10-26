@@ -27,13 +27,13 @@ final class IndexingTests: XCTestCase {
         try sandbox.write("Root/a.txt", "a")
         try sandbox.write("Root/Sub/b.txt", "b")
         try await sandbox.scan(root)
-        let firstIds = try sandbox.database.reader.read { db in try Int64.fetchAll(db, sql: "SELECT id FROM files ORDER BY id") }
+        let firstIds = try await sandbox.database.reader.read { db in try Int64.fetchAll(db, sql: "SELECT id FROM files ORDER BY id") }
 
         let second = try await sandbox.scan(root)
 
         XCTAssertEqual(second.added, 0)
         XCTAssertEqual(second.unchanged, 3)
-        let secondIds = try sandbox.database.reader.read { db in try Int64.fetchAll(db, sql: "SELECT id FROM files ORDER BY id") }
+        let secondIds = try await sandbox.database.reader.read { db in try Int64.fetchAll(db, sql: "SELECT id FROM files ORDER BY id") }
         XCTAssertEqual(firstIds, secondIds)
     }
 

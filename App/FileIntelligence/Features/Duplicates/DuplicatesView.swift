@@ -233,6 +233,8 @@ private struct DuplicateMemberRow: View {
             Divider()
             Button("Keep") { model.setReviewStatus(.keep, for: [member.id]) }
             Button("Ignore Suggestion") { model.setReviewStatus(.ignored, for: [member.id]) }
+            Divider()
+            Button("Move to Trash…") { model.moveToTrash([member.id]) }
         }
     }
 }

@@ -141,7 +141,7 @@ final class ClassificationServiceTests: XCTestCase {
 
         let readme = try XCTUnwrap(sandbox.record(at: "Root/README"))
         let mystery = try XCTUnwrap(sandbox.record(at: "Root/mystery"))
-        let slugs = try sandbox.database.reader.read { db in
+        let slugs = try await sandbox.database.reader.read { db in
             try Dictionary(uniqueKeysWithValues: FileCategory.fetchAll(db).map { ($0.id ?? -1, $0.slug) })
         }
         XCTAssertEqual(slugs[report.categoryId ?? -2], "documents")

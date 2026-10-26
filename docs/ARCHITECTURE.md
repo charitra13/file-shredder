@@ -76,9 +76,9 @@ Tables: `scan_roots`, `files`, `categories` (seeded, hierarchical), `file_tags`,
 
 ## Known limitations
 
-- **Not yet compiled or tested** (see the README). The first CI run will show compile errors to fix.
+- The core package tests and unsigned macOS app build have passed locally. Interactive UI behavior has not been manually verified; see the README for validation details.
 - FSEvents monitoring runs only while the app is open. Reconciliation scans (default every 6 hours, and at launch for stale locations) cover the rest. There is no background agent.
 - Inode-based move detection does not cross volumes, because a cross-volume move is a copy plus a delete. Such files appear as new items and the old record becomes missing.
 - `withTimeout` cancels cooperative work only. A media parser that blocks without checking cancellation still holds one of the four enrichment slots until it returns.
 - Packages and opaque folders above 25,000 entries report a capped (lower-bound) size.
-- Phases 4–7 (content extraction and FTS5 search, Trash and Archive workflows, notifications, optional local intelligence) are not implemented.
+- Content extraction and FTS5 search and optional local intelligence are not implemented. Move to Trash (`FileOperationService`) moves items and never deletes them; the index follows through a shallow rescan of the affected folders.
